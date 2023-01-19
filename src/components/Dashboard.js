@@ -10,6 +10,7 @@ import {
   getMostPopularDay,
   getInterviewsPerDay
  } from "helpers/selectors";
+ import { setInterview } from "helpers/reducers";
 
 // Mock Data
 
@@ -70,7 +71,22 @@ export default class Dashboard extends Component {
         interviewers: interviewers.data
       });
     });
+
+    // Create websocket
+    this.socket = new WebSocket(process.env.REACT_APP_WEBSOCKET_URL);
+
+    // Update dashboard based on incomping websocket message
+    this.socket.onmessage = event => {
+      const data = JSON.parse(event.data);
+    
+      if (typeof data === "object" && data.type === "SET_INTERVIEW") {
+        this.setState(previousState =>
+          setInterview(previousState, data.id, data.interview)
+        );
+      }
+    };
   }
+
 
   componentDidUpdate(previousProps, previousState) {
     if (previousState.focused !== this.state.focused) {
@@ -114,5 +130,9 @@ export default class Dashboard extends Component {
       </main>
     
     );
+  }
+
+  componentWillUnmount() {
+    this.socket.close();
   }
 }
